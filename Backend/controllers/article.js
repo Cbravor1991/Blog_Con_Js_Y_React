@@ -229,9 +229,9 @@ var controller = {
         var articleId = req.params.id;
 
         //Aplicar la instrucción de mongo de buscar y borrar
-        Article.findOneAndDelete({_id: articleId}, (err, articleRemoved) => {
+        Article.findOneAndDelete({ _id: articleId }, (err, articleRemoved) => {
             //Error de cualuqier tipo
-            if(err){
+            if (err) {
                 return res.status(500).send({
                     status: 'error',
                     message: 'Error al borrar !!!'
@@ -240,7 +240,7 @@ var controller = {
             }
 
             //No hay articulo para borrar
-            if(!articleRemoved){
+            if (!articleRemoved) {
                 return res.status(404).send({
                     status: 'error',
                     message: 'No se ha borrado el articulo, posiblemente no exista !!!'
@@ -252,22 +252,22 @@ var controller = {
                 status: 'succes',
                 article: articleRemoved
             });
-            
+
         }
-        
-        
+
+
         );
 
-       
+
 
     },
 
-    upload:(req, res) => {
+    upload: (req, res) => {
         //Configurar el modulo connect multiparty router/article.js (hecho en router)
 
         //Recoger el fichero de la peticion
-        var file_name ='Imagen no subida ...';
-        if(!req.files){
+        var file_name = 'Imagen no subida ...';
+        if (!req.files) {
             return res.status(404).send({
                 status: 'error',
                 message: file_name
@@ -285,9 +285,9 @@ var controller = {
         // Extension del fichero
         var extension_split = file_name.split('\.');
         var file_ext = extension_split[1];
-        
+
         //Comprobar si es una imagen sino borras la imagen
-        if(file_ext!= 'png' && file_ext!= 'jpg' && file_ext!= 'jpeg' && file_ext!= 'gif'){
+        if (file_ext != 'png' && file_ext != 'jpg' && file_ext != 'jpeg' && file_ext != 'gif') {
             //borrar el archivo subido usamos la libreria fs
             fs.unlink(file_path, (err) => {
                 return res.status(200).send({
@@ -297,48 +297,96 @@ var controller = {
 
             });
 
-        }else{
+        } else {
             // Si todo es valido. sacando ide de la url
             var articleId = req.params.id;
 
             //Buscar el articulo, asignarle el nombre de la imagen y actualizarlo
-           Article.findOneAndUpdate({_id: articleId}, {image: file_name}, {new: true}, (err, articleUpdated ) => {
-               if(err || !articleUpdated){
-                return res.status(200).send({
-                    status: 'error',
-                    message: 'Error al guardar la imagen de articulo !!!'
-                });
-                   
-               }
+            Article.findOneAndUpdate({ _id: articleId }, { image: file_name }, { new: true }, (err, articleUpdated) => {
+                if (err || !articleUpdated) {
+                    return res.status(200).send({
+                        status: 'error',
+                        message: 'Error al guardar la imagen de articulo !!!'
+                    });
 
-               return res.status(200).send({
-                status: 'success',
-                message: articleUpdated
-            });
-           })
+                }
+
+                return res.status(200).send({
+                    status: 'success',
+                    message: articleUpdated
+                });
+            })
         }
 
 
 
-        
+
 
     },
 
     getImage: (req, res) => {
         var file = req.params.image;
         var path_file = './upload/articles/' + file;
-     
+
         fs.access(path_file, fs.constants.F_OK, (err) => {
-          if (err) {
-            return res.status(200).send({
-              status: 'error',
-              message: 'Das Bild existiert nicht!!'
-            });
-          } else {
-            return res.sendFile(path.resolve(path_file));
-          }
+            if (err) {
+                return res.status(200).send({
+                    status: 'error',
+                    message: 'Das Bild existiert nicht!!'
+                });
+            } else {
+                return res.sendFile(path.resolve(path_file));
+            }
         });
-      }
+    },
+
+    search: (req, res) => {
+
+        //Sacar el string a buscar
+        var searchString = req.params.search;
+
+        //Buscar que el string este incluido en el titulo
+        // o este incluido en el contenido
+
+        Article.find( { "$or":[ 
+            {"title":{"$regex": searchString, "$options": "i"}},
+            {"content": {"$regex": searchString, "$options": "i"}}
+        ]})
+        .sort([['date', 'descending']])
+        .exec((err, articles)=> {
+
+            if(err){
+                return res.status(500).send({
+                    status: 'error',
+                    message: 'Error en la peticion !!!'
+                });
+
+
+            }
+
+            if(!articles || articles.length <= 0){
+                return res.status(404).send({
+                    status: 'error',
+                    message: 'No hay articulos que coincidad con tu buisqueda !!!'
+                });
+            }
+
+            return res.status(200).send({
+                status: 'success',
+                articles
+            });
+        
+
+        });
+
+
+
+      
+    
+    }
+
+
+
 
 }; //end controller
 

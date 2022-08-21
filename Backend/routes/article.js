@@ -26,6 +26,7 @@ router.delete('/article/:id', ArticleController.delete);
 //La llamada necesaria para subir archivos
 router.post('/upload-image/:id', md_upload ,ArticleController.upload);
 router.get('/get-image/:image', ArticleController.getImage);
+router.get('/search/:search', ArticleController.search);
 
 
 
